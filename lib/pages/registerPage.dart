@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -11,7 +14,7 @@ final GlobalKey<FormState> _registerFormKey = GlobalKey<FormState>();
 String? _email;
 String? _password;
 String? _name;
-
+File? _image;
 late double deviceHeight, deviceWidth;
 
 class _registerPage extends State<RegisterPage> {
@@ -30,10 +33,39 @@ class _registerPage extends State<RegisterPage> {
             mainAxisSize: MainAxisSize.max,
             children: [
               _titleText(),
+              _imagefield(),
               _registerFormField(),
               _registerBtn(),
-              _registerPageLink(),
+              // _loginPageLink(),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _imagefield() {
+    var _img = _image != null
+        ? FileImage(_image!)
+        : const NetworkImage(
+            "https://avatar.iran.liara.run/public/boy",
+          );
+    return GestureDetector(
+      onTap: () {
+        FilePicker.platform.pickFiles(type: FileType.image).then((_result) {
+          print(_result);
+          setState(() {
+            _image = File(_result!.files.first.path!);
+          });
+        });
+      },
+      child: Container(
+        height: deviceHeight * 0.2,
+        width: deviceWidth * 0.41,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            fit: BoxFit.cover,
+            image: _img as ImageProvider,
           ),
         ),
       ),
@@ -96,7 +128,11 @@ class _registerPage extends State<RegisterPage> {
           _password = _value;
         });
       },
-      validator: (_value) => _value!.length > 6 ? null : "to short! ",
+      validator: (_value) => _value!.length == 0
+          ? "enter password"
+          : _value.length > 6
+              ? null
+              : "to short! ",
     );
   }
 
@@ -125,7 +161,7 @@ class _registerPage extends State<RegisterPage> {
     );
   }
 
-  Widget _registerPageLink() {
+  Widget _loginPageLink() {
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, 'login'),
       child: const Text(
@@ -138,7 +174,7 @@ class _registerPage extends State<RegisterPage> {
   }
 
   void _registerUser() {
-    if (_registerFormKey.currentState!.validate()) {
+    if (_registerFormKey.currentState!.validate() && _image != null) {
       _registerFormKey.currentState!.save();
     }
   }

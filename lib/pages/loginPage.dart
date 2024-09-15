@@ -82,7 +82,11 @@ class _loginPage extends State<LoginPage> {
           _password = _value;
         });
       },
-      validator: (_value) => _value!.length > 6 ? null : "to short! ",
+      validator: (_value) => _value!.length == 0
+          ? "enter password"
+          : _value.length > 6
+              ? null
+              : "to short! ",
     );
   }
 
