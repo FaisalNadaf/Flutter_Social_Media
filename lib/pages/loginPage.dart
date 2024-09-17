@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_social_media/services/firebase_dervices.dart';
+import 'package:get_it/get_it.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -13,8 +15,15 @@ String? _email;
 String? _password;
 late double deviceHeight, deviceWidth;
 
+FireBaseService? _fireBaseService;
+
 class _loginPage extends State<LoginPage> {
   @override
+  void initState() {
+    super.initState();
+    _fireBaseService = GetIt.instance.get<FireBaseService>();
+  }
+
   Widget build(BuildContext context) {
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
@@ -84,7 +93,7 @@ class _loginPage extends State<LoginPage> {
       },
       validator: (_value) => _value!.length == 0
           ? "enter password"
-          : _value.length > 6
+          : _value.length >= 6
               ? null
               : "to short! ",
     );
@@ -127,9 +136,12 @@ class _loginPage extends State<LoginPage> {
     );
   }
 
-  void _loginUser() {
+  void _loginUser() async {
     if (_loginFormKey.currentState!.validate()) {
       _loginFormKey.currentState!.save();
+      bool _result = await _fireBaseService!
+          .LoginUser(email: _email!, password: _password!);
+      if (_result) Navigator.popAndPushNamed(context, 'home');
     }
   }
 }

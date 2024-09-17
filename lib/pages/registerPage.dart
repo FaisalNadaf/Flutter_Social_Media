@@ -1,13 +1,12 @@
 import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_social_media/services/firebase_dervices.dart';
+import 'package:get_it/get_it.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() {
-    return _registerPage();
-  }
+  State<StatefulWidget> createState() => _RegisterPageState();
 }
 
 final GlobalKey<FormState> _registerFormKey = GlobalKey<FormState>();
@@ -17,7 +16,15 @@ String? _name;
 File? _image;
 late double deviceHeight, deviceWidth;
 
-class _registerPage extends State<RegisterPage> {
+FireBaseService? _fireBaseService;
+
+class _RegisterPageState extends State<RegisterPage> {
+  @override
+  void initState() {
+    super.initState();
+    _fireBaseService = GetIt.instance.get<FireBaseService>();
+  }
+
   @override
   Widget build(BuildContext context) {
     deviceHeight = MediaQuery.of(context).size.height;
@@ -33,7 +40,7 @@ class _registerPage extends State<RegisterPage> {
             mainAxisSize: MainAxisSize.max,
             children: [
               _titleText(),
-              _imagefield(),
+              _imageField(),
               _registerFormField(),
               _registerBtn(),
               // _loginPageLink(),
@@ -44,28 +51,27 @@ class _registerPage extends State<RegisterPage> {
     );
   }
 
-  Widget _imagefield() {
-    var _img = _image != null
-        ? FileImage(_image!)
-        : const NetworkImage(
-            "https://avatar.iran.liara.run/public/boy",
-          );
+  Widget _imageField() {
     return GestureDetector(
-      onTap: () {
-        FilePicker.platform.pickFiles(type: FileType.image).then((_result) {
-          print(_result);
+      onTap: () async {
+        FilePickerResult? result =
+            await FilePicker.platform.pickFiles(type: FileType.image);
+        if (result != null && result.files.isNotEmpty) {
           setState(() {
-            _image = File(_result!.files.first.path!);
+            _image = File(result.files.first.path!);
           });
-        });
+        }
       },
       child: Container(
-        height: deviceHeight * 0.2,
-        width: deviceWidth * 0.41,
+        height: deviceHeight * 0.16,
+        width: deviceWidth * 0.325,
         decoration: BoxDecoration(
           image: DecorationImage(
             fit: BoxFit.cover,
-            image: _img as ImageProvider,
+            image: _image != null
+                ? FileImage(_image!)
+                : const NetworkImage("https://avatar.iran.liara.run/public/boy")
+                    as ImageProvider,
           ),
         ),
       ),
@@ -74,48 +80,42 @@ class _registerPage extends State<RegisterPage> {
 
   Widget _registerFormField() {
     return Container(
-      height: deviceHeight * 0.3,
+      height: deviceHeight * 0.22,
       child: Form(
-          key: _registerFormKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _namwField(),
-              _emailText(),
-              _passwordField(),
-            ],
-          )),
+        key: _registerFormKey,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _nameField(),
+            _emailText(),
+            _passwordField(),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _namwField() {
+  Widget _nameField() {
     return TextFormField(
       decoration: const InputDecoration(hintText: "name..."),
-      onSaved: (_value) {
-        setState(() {
-          _name = _value;
-        });
-      },
-      validator: (_value) => _value!.isNotEmpty ? null : "enter name",
+      onSaved: (_value) => _name = _value?.trim(),
+      validator: (_value) =>
+          (_value?.trim().isNotEmpty ?? false) ? null : "Enter name",
     );
   }
 
   Widget _emailText() {
     return TextFormField(
       decoration: const InputDecoration(hintText: "email..."),
-      onSaved: (_value) {
-        setState(() {
-          _email = _value;
-        });
-      },
+      onSaved: (_value) => _email = _value?.trim(),
       validator: (_value) {
-        bool result = _value!.contains(
-          RegExp(
-              r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"),
-        );
-        return result ? null : "please enter valid email ";
+        final emailRegex = RegExp(
+            r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+        return emailRegex.hasMatch(_value ?? '')
+            ? null
+            : "Please enter a valid email";
       },
     );
   }
@@ -123,16 +123,12 @@ class _registerPage extends State<RegisterPage> {
   Widget _passwordField() {
     return TextFormField(
       decoration: const InputDecoration(hintText: "password..."),
-      onSaved: (_value) {
-        setState(() {
-          _password = _value;
-        });
+      onSaved: (_value) => _password = _value,
+      validator: (_value) {
+        if ((_value ?? '').isEmpty) return "Enter password";
+        return (_value!.length >= 6) ? null : "Password too short";
       },
-      validator: (_value) => _value!.length == 0
-          ? "enter password"
-          : _value.length > 6
-              ? null
-              : "to short! ",
+      obscureText: true,
     );
   }
 
@@ -147,35 +143,116 @@ class _registerPage extends State<RegisterPage> {
     );
   }
 
-  Widget _registerBtn() {
-    return MaterialButton(
-      color: Colors.red,
-      onPressed: _registerUser,
-      child: const Text(
-        'register',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-        ),
-      ),
-    );
+  // Widget _registerBtn() {
+  //   return MaterialButton(
+  //     color: Colors.red,
+  //     onPressed: _registerUser,
+  //     child: const Text(
+  //       'Register',
+  //       style: TextStyle(
+  //         color: Colors.white,
+  //         fontSize: 20,
+  //       ),
+  //     ),
+  //   );
+  // }
+
+  // void _registerUser() async {
+  //   if (_registerFormKey.currentState!.validate() && _image != null) {
+  //     _registerFormKey.currentState!.save();
+  //     bool _result = await _fireBaseService!.RegisterUser(
+  //       name: _name!,
+  //       email: _email!,
+  //       password: _password!,
+  //       image: _image!,
+  //     );
+  //     print('Registered');
+  //     // ignore: use_build_context_synchronously
+  //     if (_result) Navigator.pop(context);
+  //   }
+  // }
+
+  bool _isLoading = false; // Add a loading state variable
+
+Widget _registerBtn() {
+  return MaterialButton(
+    color: Colors.red,
+    onPressed: _isLoading ? null : _registerUser, // Disable if loading
+    child: _isLoading 
+        ? CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          )
+        : const Text(
+            'Register',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+            ),
+          ),
+  );
+}
+
+void _registerUser() async {
+  if (_registerFormKey.currentState!.validate() && _image != null) {
+    setState(() {
+      _isLoading = true; // Show loading spinner
+    });
+
+    _registerFormKey.currentState!.save();
+
+    try {
+      bool _result = await _fireBaseService!.registerUser(
+        name: _name!,
+        email: _email!,
+        password: _password!,
+        image: _image!,
+      );
+
+      if (_result) {
+        if (!mounted) return; // Ensure the widget is still in the tree
+        Navigator.pop(context); // Navigate back after successful registration
+      } else {
+        // Handle failure
+        _showErrorDialog("Registration failed. Please try again.");
+      }
+    } catch (e) {
+      _showErrorDialog("An error occurred: $e");
+    } finally {
+      setState(() {
+        _isLoading = false; // Hide loading spinner
+      });
+    }
+  } else if (_image == null) {
+    _showErrorDialog("Please upload a profile image.");
   }
+}
+
+void _showErrorDialog(String message) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Error"),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("OK"),
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _loginPageLink() {
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, 'login'),
+      onTap: () => Navigator.popAndPushNamed(context, 'login'),
       child: const Text(
-        'already have an account?',
+        'Already have an account?',
         style: TextStyle(
           color: Colors.blue,
         ),
       ),
     );
-  }
-
-  void _registerUser() {
-    if (_registerFormKey.currentState!.validate() && _image != null) {
-      _registerFormKey.currentState!.save();
-    }
   }
 }
