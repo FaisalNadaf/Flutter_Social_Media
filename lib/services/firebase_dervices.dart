@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 
 final String User_Collection = 'users';
+final String Posts_Collection = 'pasts';
 
 class FireBaseService {
   FirebaseAuth _auth = FirebaseAuth.instance;
@@ -16,36 +17,6 @@ class FireBaseService {
 
   Map? currentUser;
 
-  // Future<bool> RegisterUser({
-  //   required String name,
-  //   required String email,
-  //   required String password,
-  //   required File image,
-  // }) async {
-  //   try {
-  //     UserCredential _userInfo = await _auth.createUserWithEmailAndPassword(
-  //         email: email, password: password);
-
-  //     String UserId = _userInfo.user!.uid;
-  //     String _fileName = Timestamp.now().microsecondsSinceEpoch.toString() +
-  //         p.extension(image.path);
-  //     UploadTask _task =
-  //         _storage.ref('images/$UserId/$_fileName').putFile(image);
-  //     return _task.then((_snapShot) async {
-  //       String _downloadUrl = await _snapShot.ref.getDownloadURL();
-  //       await _db.collection(User_Collection).doc(UserId).set({
-  //         "name": name,
-  //         "email": email,
-  //         "image": _downloadUrl,
-  //       });
-  //       return true;
-  //     });
-  //   } catch (e) {
-  //     print("error in firebase services register user  $e");
-  //     return false;
-  //   }
-  // }
-
   Future<bool> registerUser({
     required String name,
     required String email,
@@ -53,39 +24,70 @@ class FireBaseService {
     required File image,
   }) async {
     try {
-      // Create a new user with email and password
-      UserCredential userInfo = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      String userId = userInfo.user!.uid;
+      UserCredential _userInfo = await _auth.createUserWithEmailAndPassword(
+          email: email, password: password);
 
-      // Generate a file name for the image
-      String fileName =
-          "${Timestamp.now().microsecondsSinceEpoch}${p.extension(image.path)}";
-
-      // Upload the image to Firebase Storage
-      UploadTask uploadTask =
-          _storage.ref('images/$userId/$fileName').putFile(image);
-      TaskSnapshot snapshot = await uploadTask;
-
-      // Get the download URL for the uploaded image
-      String downloadUrl = await snapshot.ref.getDownloadURL();
-
-      // Save the user's data in Firestore
-      await _db.collection(User_Collection).doc(userId).set({
-        "name": name,
-        "email": email,
-        "image": downloadUrl,
+      String _userId = _userInfo.user!.uid;
+      String _fileName = Timestamp.now().millisecondsSinceEpoch.toString() +
+          p.extension(image.path);
+      print(_fileName);
+      UploadTask _task =
+          _storage.ref('images/$_userId/$_fileName').putFile(image);
+      return _task.then((_snapShot) async {
+        String _downloadUrl = await _snapShot.ref.getDownloadURL();
+        await _db.collection(User_Collection).doc(_userId).set({
+          "name": name,
+          "email": email,
+          "image": _downloadUrl,
+        });
+        return true;
       });
-
-      return true;
     } catch (e) {
-      // Log the error message
-      print("Error in Firebase registerUser: $e");
-      return false; 
+      print("error in firebase services register user  $e");
+      return false;
     }
   }
+
+  // Future<bool> registerUser({
+  //   required String name,
+  //   required String email,
+  //   required String password,
+  //   required File image,
+  // }) async {
+  //   try {
+  //     // Create a new user with email and password
+  //     UserCredential userInfo = await _auth.createUserWithEmailAndPassword(
+  //       email: email,
+  //       password: password,
+  //     );
+  //     String _userId = userInfo.user!.uid;
+
+  //     // Generate a file name for the image
+  //     String fileName =
+  //         "${Timestamp.now().microsecondsSinceEpoch}${p.extension(image.path)}";
+
+  //     // Upload the image to Firebase Storage
+  //     UploadTask uploadTask =
+  //         _storage.ref('images/$_userId/$fileName').putFile(image);
+  //     TaskSnapshot snapshot = await uploadTask;
+
+  //     // Get the download URL for the uploaded image
+  //     String downloadUrl = await snapshot.ref.getDownloadURL();
+
+  //     // Save the user's data in Firestore
+  //     await _db.collection(User_Collection).doc(_userId).set({
+  //       "name": name,
+  //       "email": email,
+  //       "image": downloadUrl,
+  //     });
+
+  //     return true;
+  //   } catch (e) {
+  //     // Log the error message
+  //     print("Error in Firebase registerUser: $e");
+  //     return false;
+  //   }
+  // }
 
   Future<bool> LoginUser({
     required String email,
@@ -112,5 +114,30 @@ class FireBaseService {
     DocumentSnapshot _doc =
         await _db.collection(User_Collection).doc(uid).get();
     return _doc.data() as Map;
+  }
+
+  Future<bool> uploadImage({
+    required File image,
+  }) async {
+    try {
+      String _userId = _auth.currentUser!.uid;
+      String _fileName = Timestamp.now().millisecondsSinceEpoch.toString() +
+          p.extension(image.path);
+      print(_fileName);
+      UploadTask _task =
+          _storage.ref('images/$_userId/$_fileName').putFile(image);
+      return _task.then((_snapShot) async {
+        String _downloadUrl = await _snapShot.ref.getDownloadURL();
+        await _db.collection(Posts_Collection).add({
+          'UserId': _userId,
+          'date': Timestamp.now(),
+          "image": _downloadUrl,
+        });
+        return true;
+      });
+    } catch (e) {
+      print("error in firebase services register user  $e");
+      return false;
+    }
   }
 }

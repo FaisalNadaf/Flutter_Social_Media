@@ -1,6 +1,11 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_social_media/pages/feedPage.dart';
 import 'package:flutter_social_media/pages/profilePage.dart';
+import 'package:flutter_social_media/services/firebase_dervices.dart';
+import 'package:get_it/get_it.dart';
 
 class Homepage extends StatefulWidget {
   @override
@@ -17,8 +22,16 @@ List<Widget> pages = [
   ProfilePage(),
 ];
 
+FireBaseService? _fireBaseService;
+
 class _homePageState extends State<Homepage> {
   @override
+  @override
+  void initState() {
+    super.initState();
+    _fireBaseService = GetIt.instance.get<FireBaseService>();
+  }
+
   Widget build(BuildContext context) {
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
@@ -31,7 +44,7 @@ class _homePageState extends State<Homepage> {
         ),
         actions: [
           GestureDetector(
-            onTap: () {},
+            onTap: _uploadImage,
             child: const Icon(
               Icons.add_a_photo,
             ),
@@ -82,5 +95,12 @@ class _homePageState extends State<Homepage> {
         ),
       ],
     );
+  }
+
+  void _uploadImage() async {
+    FilePickerResult? _result =
+        await FilePicker.platform.pickFiles(type: FileType.image);
+    File _image = File(_result!.files.first.path!);
+    await _fireBaseService!.uploadImage(image: _image);
   }
 }

@@ -43,7 +43,7 @@ class _RegisterPageState extends State<RegisterPage> {
               _imageField(),
               _registerFormField(),
               _registerBtn(),
-              // _loginPageLink(),
+              _loginPageLink(),
             ],
           ),
         ),
@@ -80,7 +80,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget _registerFormField() {
     return Container(
-      height: deviceHeight * 0.22,
+      height: deviceHeight * 0.3,
       child: Form(
         key: _registerFormKey,
         child: Column(
@@ -143,110 +143,109 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // Widget _registerBtn() {
-  //   return MaterialButton(
-  //     color: Colors.red,
-  //     onPressed: _registerUser,
-  //     child: const Text(
-  //       'Register',
-  //       style: TextStyle(
-  //         color: Colors.white,
-  //         fontSize: 20,
-  //       ),
-  //     ),
-  //   );
-  // }
+  Widget _registerBtn() {
+    return MaterialButton(
+      color: Colors.red,
+      onPressed: _registerUser,
+      child: const Text(
+        'Register',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+        ),
+      ),
+    );
+  }
 
-  // void _registerUser() async {
-  //   if (_registerFormKey.currentState!.validate() && _image != null) {
-  //     _registerFormKey.currentState!.save();
-  //     bool _result = await _fireBaseService!.RegisterUser(
-  //       name: _name!,
-  //       email: _email!,
-  //       password: _password!,
-  //       image: _image!,
-  //     );
-  //     print('Registered');
-  //     // ignore: use_build_context_synchronously
-  //     if (_result) Navigator.pop(context);
-  //   }
-  // }
-
-  bool _isLoading = false; // Add a loading state variable
-
-Widget _registerBtn() {
-  return MaterialButton(
-    color: Colors.red,
-    onPressed: _isLoading ? null : _registerUser, // Disable if loading
-    child: _isLoading 
-        ? CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          )
-        : const Text(
-            'Register',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-            ),
-          ),
-  );
-}
-
-void _registerUser() async {
-  if (_registerFormKey.currentState!.validate() && _image != null) {
-    setState(() {
-      _isLoading = true; // Show loading spinner
-    });
-
-    _registerFormKey.currentState!.save();
-
-    try {
+  void _registerUser() async {
+    if (_registerFormKey.currentState!.validate() && _image != null) {
+      _registerFormKey.currentState!.save();
       bool _result = await _fireBaseService!.registerUser(
         name: _name!,
         email: _email!,
         password: _password!,
         image: _image!,
       );
-
+      print(_result);
+      print('Registered');
       if (_result) {
-        if (!mounted) return; // Ensure the widget is still in the tree
-        Navigator.pop(context); // Navigate back after successful registration
-      } else {
-        // Handle failure
-        _showErrorDialog("Registration failed. Please try again.");
+        Navigator.popAndPushNamed(context, 'home');
       }
-    } catch (e) {
-      _showErrorDialog("An error occurred: $e");
-    } finally {
-      setState(() {
-        _isLoading = false; // Hide loading spinner
-      });
     }
-  } else if (_image == null) {
-    _showErrorDialog("Please upload a profile image.");
   }
-}
 
-void _showErrorDialog(String message) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Error"),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("OK"),
-        ),
-      ],
-    ),
-  );
-}
+  // bool _isLoading = false; // Add a loading state variable
 
+  // Widget _registerBtn() {
+  //   return MaterialButton(
+  //     color: Colors.red,
+  //     onPressed: _isLoading ? null : _registerUser, // Disable if loading
+  //     child: _isLoading
+  // ? CircularProgressIndicator(
+  //             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+  //           )
+  //         : const Text(
+  //             'Register',
+  //             style: TextStyle(
+  //               color: Colors.white,
+  //               fontSize: 20,
+  //             ),
+  //           ),
+  //   );
+  // }
+
+  // void _registerUser() async {
+  //   if (_registerFormKey.currentState!.validate() && _image != null) {
+  //     setState(() {
+  //       _isLoading = true; // Show loading spinner
+  //     });
+
+  //     _registerFormKey.currentState!.save();
+
+  //     try {
+  //       bool _result = await _fireBaseService!.registerUser(
+  //         name: _name!,
+  //         email: _email!,
+  //         password: _password!,
+  //         image: _image!,
+  //       );
+
+  //       if (_result) {
+  //         Navigator.pop(context); // Navigate back after successful registration
+  //       } else {
+  //         _showErrorDialog("Registration failed. Please try again.");
+  //       }
+  //     } catch (e) {
+  //       _showErrorDialog("An error occurred: $e");
+  //     } finally {
+  //       setState(() {
+  //         _isLoading = false; // Hide loading spinner
+  //       });
+  //     }
+  //   } else if (_image == null) {
+  //     _showErrorDialog("Please upload a profile image.");
+  //   }
+  // }
+
+  // void _showErrorDialog(String message) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Text("Error"),
+  //       content: Text(message),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           child: const Text("OK"),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _loginPageLink() {
     return GestureDetector(
-      onTap: () => Navigator.popAndPushNamed(context, 'login'),
+      onTap: () => Navigator.pop(context),
       child: const Text(
         'Already have an account?',
         style: TextStyle(
