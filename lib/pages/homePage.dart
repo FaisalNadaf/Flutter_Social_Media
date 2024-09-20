@@ -37,32 +37,69 @@ class _homePageState extends State<Homepage> {
     deviceWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.redAccent,
+        elevation: 4.0, // Adds slight shadow
         toolbarHeight: deviceHeight * 0.1,
         title: const Text(
-          'social-media',
+          'Social Media',
+          style: TextStyle(
+            fontSize: 24.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 1.2, // Slight letter spacing for better appearance
+          ),
         ),
+        // centerTitle: true, // Centers the title
         actions: [
-          GestureDetector(
-            onTap: _uploadImage,
-            child: const Icon(
-              Icons.add_a_photo,
-            ),
-          ),
+          // Upload Image Button
           Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: deviceWidth * 0.03,
+            padding: EdgeInsets.only(right: deviceWidth * 0.03),
+            child: InkWell(
+              onTap: _uploadImage,
+              borderRadius:
+                  BorderRadius.circular(50), // Adds ripple effect to round area
+              child: const Icon(
+                Icons.add_a_photo,
+                color: Colors.white,
+                size: 28.0,
+              ),
             ),
           ),
-          GestureDetector(
-            onTap: () {},
-            child: const Icon(
-              Icons.logout,
-            ),
-          ),
+
+          // Logout Button with Confirmation
           Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: deviceWidth * 0.03,
+            padding: EdgeInsets.only(right: deviceWidth * 0.03),
+            child: InkWell(
+              onTap: () async {
+                bool? confirmLogout = await showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Logout Confirmation'),
+                    content: const Text('Are you sure you want to logout?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Logout'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmLogout == true) {
+                  _fireBaseService!.LogOut();
+                  Navigator.popAndPushNamed(context, 'login');
+                }
+              },
+              borderRadius: BorderRadius.circular(50),
+              child: const Icon(
+                Icons.logout,
+                color: Colors.white,
+                size: 28.0,
+              ),
             ),
           ),
         ],

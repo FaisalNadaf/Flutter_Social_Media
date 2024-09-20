@@ -116,6 +116,15 @@ class FireBaseService {
     return _doc.data() as Map;
   }
 
+  Future<void> getUser() async {
+    String _userId = _auth.currentUser!.uid;
+    DocumentSnapshot _doc =
+        await _db.collection(User_Collection).doc(_userId).get();
+    Map data = _doc.data() as Map;
+    print(data['name']);
+    return data['name'];
+  }
+
   Future<bool> uploadImage({
     required File image,
   }) async {
@@ -139,5 +148,25 @@ class FireBaseService {
       print("error in firebase services register user  $e");
       return false;
     }
+  }
+
+  Stream<QuerySnapshot> getUserPosts() {
+    String _userId = _auth.currentUser!.uid;
+
+    return _db
+        .collection(Posts_Collection)
+        .where('UserId', isEqualTo: _userId)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getLatestPosts() {
+    return _db
+        .collection(Posts_Collection)
+        .orderBy('date', descending: true)
+        .snapshots();
+  }
+
+  Future<void> LogOut() async {
+    return await _auth.signOut();
   }
 }
